@@ -37,9 +37,8 @@ My focus is on building **modern, scalable, and user-focused web applications** 
 ## 📫 Contact
 Feel free to reach out for collaboration or opportunities:
 
-- GitHub: https://github.com/your-username
-- LinkedIn: https://linkedin.com/in/your-profile
-
+- LinkedIn: https://linkedin.com/in/joshua-calvin-12a7a2319
+- Email: jcalvin.dev@gmail.com
 ---
 
 > _"Building web applications is not just about writing code, but about solving problems and delivering value."_
