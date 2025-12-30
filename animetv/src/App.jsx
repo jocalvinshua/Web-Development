@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import './style.css';
-import animesData from './container/Anime.jsx'
+import {animesData} from './assets/assets.js'
+import Navbar from './container/Navbar.jsx'
+import AnimeLists from './container/AnimeLists.jsx'
+import AnimeDetails from './container/AnimeDetails.jsx'
 
 
 export default function App() {
