@@ -1,20 +1,33 @@
 import express from 'express'
 import cors from 'cors'
-import { config } from 'dotenv'
+import 'dotenv/config'
+import cookieParser from 'cookie-parser'
 
-config()
+import connectDB from './config/configDB.js'
+import resumeRoute from './route/resumeRoute.js'
+import userRoute from './route/userRoute.js'
 
 const app = express()
 const port = process.env.PORT || 5000
 
-// middleware
-app.use(cors())
-app.use(express.json())
+connectDB(); 
 
-// route
+// --- MIDDLEWARE ---
+app.use(cors({
+    credentials: true, 
+    origin: process.env.FRONTEND_URL
+}))
+
+app.use(express.json())
+app.use(cookieParser()) 
+
+// --- ROUTES ---
 app.get('/', (req, res) => {
     res.send('API is Working')
 })
+
+app.use('/api/user', userRoute)
+app.use('/api/resume', resumeRoute)
 
 app.listen(port, () => {
     console.log(`Server is Running at http://localhost:${port}`)
