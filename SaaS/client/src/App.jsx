@@ -1,11 +1,12 @@
 import Home from "./pages/Home";
-import { Route, Routes } from "react-router-dom";
 import Layout from "./pages/Layout";
 import Dashboard from "./pages/Dashboard";
 import ResumeBuilder from "./pages/ResumeBuilder";
 import Preview from "./pages/Preview";
 import Login from "./pages/Login"
+
 import './index.css'
+import { Route, Routes } from "react-router-dom";
 
 export default function App(){
   return(

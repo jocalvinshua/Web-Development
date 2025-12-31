@@ -1,28 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+@import "tailwindcss";
 
-@import 'tailwindcss';
-
-:root {
-    --color-primary: #4fbf8b;
-    --color-primary-dull: #aeffd9;
+@theme {
+  /* Registrasikan warna ke sistem theme Tailwind */
+  --color-primary: #10b981;
+  --color-primary-dull: #6ee7b7;
+  --color-secondary: #059669;
+  --color-accent: #34d399;
 }
 
-/* Tailwind custom palette example */
-@layer base {
-  .text-primary {
-    color: var(--color-primary);
+/* Custom utility non-Tailwind tetap bisa di sini */
+@layer utilities {
+  .noScrollBar::-webkit-scrollbar {
+    display: none;
   }
-  .bg-primary {
-    background-color: var(--color-primary);
-  }
-  .text-primary-dull {
-    color: var(--color-primary-dull);
-  }
-  .bg-primary-dull {
-    background-color: var(--color-primary-dull);
-  }
-}
-
-.noScrollBar::-webkit-scrollbar{
-  display: none;
 }

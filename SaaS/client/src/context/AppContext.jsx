@@ -1,11 +1,18 @@
-import { Children, createContext } from "react";
+import { createContext } from "react";
+import { useNavigate } from "react-router-dom";
 
 export const AppContext = createContext(null);
 
-export const AppProvider = ({children})=>{
-    return(
-        <AppContext.Provider value={{}}>
-            {Children.only(children)}
-        </AppContext.Provider>
-    )
-}
+export const AppProvider = ({ children }) => {
+  const navigate = useNavigate();
+
+  return (
+    <AppContext.Provider value={{ 
+        navigate 
+        
+        
+        }}>
+      {children}
+    </AppContext.Provider>
+  );
+};
