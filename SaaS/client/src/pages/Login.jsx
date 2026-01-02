@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Mail, Lock, User, LogIn, UserPlus, ArrowRight } from "lucide-react";
 import axios from "axios";
+import { AppContext } from "../context/AppContext";
 
 export default function Login() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const { handleLogin, handleRegister } = useContext(AppContext);
   
-  // Ambil state dari URL (?state=register) atau default ke login
   const [state, setState] = useState(searchParams.get("state") || "login");
 
   const [formData, setFormData] = useState({
@@ -16,6 +16,10 @@ export default function Login() {
     password: "",
   });
 
+  useEffect(() => {
+    setFormData({ name: "", email: "", password: "" });
+  }, [state]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -23,18 +27,11 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const endpoint = state === "login" ? "/api/auth/login" : "/api/auth/register";
-      const response = await axios.post(`http://localhost:5000${endpoint}`, formData, {
-        withCredentials: true,
-      });
-
-      if (response.data.success) {
-        // Jika login berhasil, arahkan ke dashboard
-        navigate("/app/dashboard");
-      }
-    } catch (error) {
-      alert(error.response?.data?.message || "An error occurred");
+    if (state === "login") {
+      await handleLogin({ email: formData.email, password: formData.password });
+      console.log("Login Successfully")
+    } else {
+      await handleRegister(formData);
     }
   };
 

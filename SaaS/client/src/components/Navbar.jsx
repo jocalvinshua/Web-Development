@@ -5,8 +5,7 @@ import { AppContext } from "../context/AppContext";
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // ✅ FIX: useContext
-  const { navigate } = useContext(AppContext);
+  const { navigate, token } = useContext(AppContext);
 
   const navlink = [
     { id: "#", name: "Home" },
@@ -15,8 +14,13 @@ export default function Navbar() {
     { id: "#cta", name: "Contact" },
   ];
 
-  const handleLogin = () => {
-    navigate("/login");
+  // Logika navigasi berdasarkan status login
+  const handleAction = () => {
+    if (token) {
+      navigate("/app"); 
+    } else {
+      navigate("/login"); 
+    }
   };
 
   return (
@@ -27,11 +31,10 @@ export default function Navbar() {
           <span className="px-3 py-1 rounded-md bg-white text-primary font-semibold mr-2">
             AI Feature
           </span>
-          Try create resume using AI
+          Try creating a resume using AI
         </p>
       </div>
 
-      {/* Navbar */}
       <nav className="z-50 flex items-center justify-between w-full py-4 px-6 md:px-16 lg:px-24 xl:px-40 text-sm bg-white/80 backdrop-blur sticky top-0">
         <a href="#" className="flex items-center gap-2">
           <img src={logo} alt="Logo" className="h-8" />
@@ -51,13 +54,13 @@ export default function Navbar() {
           ))}
         </ul>
 
-        {/* Action Button */}
+        {/* Action Button: Get Started / Dashboard */}
         <div className="hidden md:flex">
           <button
-            onClick={handleLogin}
+            onClick={handleAction}
             className="px-6 py-2 rounded-full bg-primary text-white font-semibold hover:bg-primary-dull active:scale-95 transition-all shadow-sm"
           >
-            Get Started
+            {token ? "Dashboard" : "Get Started"}
           </button>
         </div>
 
@@ -79,7 +82,6 @@ export default function Navbar() {
         </button>
       </nav>
 
-      {/* Mobile Menu */}
       <div
         className={`fixed inset-0 z-[100] bg-primary/90 backdrop-blur-md flex flex-col items-center justify-center gap-8 md:hidden transition-transform duration-300 ${
           menuOpen ? "translate-x-0" : "-translate-x-full"
@@ -98,6 +100,16 @@ export default function Navbar() {
             </li>
           ))}
         </ul>
+
+        <button
+          onClick={() => {
+            setMenuOpen(false);
+            handleAction();
+          }}
+          className="px-8 py-3 rounded-full bg-white text-primary font-bold hover:bg-slate-100 transition"
+        >
+          {token ? "Go to Dashboard" : "Get Started"}
+        </button>
 
         <button
           onClick={() => setMenuOpen(false)}

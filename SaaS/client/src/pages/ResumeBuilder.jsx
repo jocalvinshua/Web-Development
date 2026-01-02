@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeftIcon, ChevronLeft, ChevronRight, Palette, User } from 'lucide-react';
-
-import ClassicTemplate from '../components/templates/ClassicTemplate';
-import ModernTemplate from '../components/templates/ModernTemplate';
-import MinimalTemplate from '../components/templates/MinimalTemplate';
-import MinimalImageTemplate from '../components/templates/MinimalImageTemplate';
+import { ArrowLeftIcon, ChevronLeft, ChevronRight, Save, User, Layout } from 'lucide-react';
 
 import EducationForm from '../components/resume/EducationForm';
 import ExperienceForm from '../components/resume/ExperienceForm';
@@ -16,10 +11,15 @@ import SummaryForm from '../components/resume/SummaryForm';
 import { dummyResumeData } from '../assets/assets';
 import Preview from '../components/Preview';
 import TemplateSelector from '../components/TemplateSelector';
+import ColorPicker from '../components/ColorPicker';
+import { useContext } from 'react';
+import { AppContext } from '../context/AppContext';
 
 const ResumeBuilder = () => {
+  const { saveResume } = useContext(AppContext)
+
   const { resumeId } = useParams();
-  const [step, setStep] = useState(0); // Mulai dari index 0
+  const [step, setStep] = useState(0);
   const [removeBackground, setRemoveBackground] = useState(false);
 
   const [resumeData, setResumeData] = useState({
@@ -31,7 +31,7 @@ const ResumeBuilder = () => {
     education: [],
     project: [],
     skills: [],
-    template: 'classic', // Default ke Classic
+    template: 'classic',
     accent_color: "#3b82f6",
   });
 
@@ -58,10 +58,14 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[step];
 
-  // Helper untuk update template secara spesifik
-  const handleTemplateChange = (val) => {
-    setResumeData(prev => ({ ...prev, template: val }));
-  };
+  const handleSubmit = async()=>{
+    const savedData = await saveResume(resumeData);
+    if (savedData) {
+      if (!resumeData._id) {
+        setResumeData(prev => ({ ...prev, _id: savedData._id }));
+      }
+    } 
+  }
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
@@ -89,10 +93,14 @@ const ResumeBuilder = () => {
 
               {/* Section Navigation */}
               <div className='flex items-center justify-between px-6 py-4 border-b border-gray-100 mt-1'>
-                <div>
+                <div className='flex items-center gap-2'>
                   <TemplateSelector 
                     selectedTemplate={resumeData.template} 
                     onChange={(val) => setResumeData(prev => ({ ...prev, template: val }))} 
+                  />
+                  <ColorPicker 
+                    selectedColor={resumeData.accent_color} 
+                    onChange={(color) => setResumeData(prev => ({ ...prev, accent_color: color }))} 
                   />
                 </div>
                 <button 
@@ -140,12 +148,12 @@ const ResumeBuilder = () => {
                     onChange={(newData) => setResumeData(prev => ({ ...prev, education: newData }))} 
                   />
                 )}
-                {/* {activeSection.id === 'projects' && (
+                {activeSection.id === 'projects' && (
                   <ProjectForm 
-                    data={resumeData.project} 
+                    data={resumeData.project}
                     onChange={(val) => setResumeData(prev => ({ ...prev, project: val }))} 
                   />
-                )} */}
+                )}
 
                 {activeSection.id === 'skills' && (
                   <SkillsForm 
@@ -159,12 +167,27 @@ const ResumeBuilder = () => {
 
           {/* Right Panel -- Preview */}
           <div className="lg:col-span-7">
-            <div className="sticky top-0">
-              <Preview 
-                data={resumeData} 
-                template={resumeData.template} 
-                accentColor={resumeData.accent_color}
-              />
+            <div className="sticky top-8 flex flex-col gap-4">
+
+              {/* Container Tombol Save - Rata Kanan */}
+              <div className="flex justify-end items-center gap-3">
+                <button 
+                  onClick={handleSubmit}
+                  className="flex items-center gap-2 text-sm font-semibold text-green-700 bg-green-100 hover:bg-green-200 border border-green-200 active:scale-95 transition-all px-6 py-2.5 rounded-lg"
+                >
+                  <span>Save</span>
+                  <Save size={16}/>
+                </button>
+              </div>
+
+              {/* Komponen Preview */}
+              <div className="shadow-2xl rounded-lg overflow-hidden border border-gray-200 bg-white">
+                <Preview 
+                  data={resumeData} 
+                  template={resumeData.template} 
+                  accentColor={resumeData.accent_color}
+                />
+              </div>
             </div>
           </div>
         </div>

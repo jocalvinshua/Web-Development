@@ -1,5 +1,5 @@
 import React from 'react';
-import { Save, Sparkles } from 'lucide-react';
+import { Save, Sparkle, Sparkles } from 'lucide-react';
 
 const SummaryForm = ({ data, onChange, }) => {
   
@@ -8,13 +8,16 @@ const SummaryForm = ({ data, onChange, }) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-end mb-2">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Professional Summary</h2>
+          <h3 className="text-2xl font-bold text-gray-800">Professional Summary</h3>
           <p className="text-sm text-gray-600 mt-1">
-            Summarize your career and key achievements in 2-3 sentences.
+            Summarize your career and key achievements.
           </p>
         </div>
+        <button className='flex items-center gap-2 px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transitions-colors disabled:opacity-50'>
+          <Sparkle className='size-4'/>
+          AI Enhance</button>
       </div>
 
       <div className="relative">

@@ -4,9 +4,10 @@ import { Plus, Trash2, FolderCode } from 'lucide-react';
 const ProjectForm = ({ data = [], onChange }) => {
   
   const addProject = () => {
+    // DISESUAIKAN: Menggunakan 'name' (bukan title) agar sesuai dengan {project.name} di template
     const newProject = { 
-      title: '', 
-      type: '', // Sudah diganti dari technologies ke type
+      name: '', 
+      type: '', 
       description: '', 
     };
     onChange([...data, newProject]);
@@ -15,7 +16,6 @@ const ProjectForm = ({ data = [], onChange }) => {
   const handleChange = (index, e) => {
     const { name, value } = e.target;
     const newList = [...data];
-    // Memastikan baris yang diubah diperbarui berdasarkan atribut 'name' input
     newList[index] = { ...newList[index], [name]: value };
     onChange(newList);
   };
@@ -51,21 +51,22 @@ const ProjectForm = ({ data = [], onChange }) => {
               <label className="text-xs font-semibold text-gray-500 uppercase">Project Title</label>
               <input 
                 type="text" 
-                name="title" // Harus sesuai dengan key di objek
-                value={proj.title || ""} 
+                name="name" // DISESUAIKAN: Key adalah 'name' sesuai template
+                value={proj.name || ""} 
                 onChange={(e) => handleChange(index, e)} 
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" 
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" 
+                placeholder="e.g. Portfolio Website"
               />
             </div>
             <div className="space-y-1">
               <label className="text-xs font-semibold text-gray-500 uppercase">Project Type</label>
               <input 
                 type="text" 
-                name="type" // Ganti 'technologies' menjadi 'type' agar sinkron dengan addProject
+                name="type" // DISESUAIKAN: Key adalah 'type' sesuai template
                 value={proj.type || ""} 
                 onChange={(e) => handleChange(index, e)} 
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" 
-                placeholder="e.g. Web App, Mobile, Open Source"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" 
+                placeholder="e.g. Web Development"
               />
             </div>
           </div>
@@ -76,7 +77,8 @@ const ProjectForm = ({ data = [], onChange }) => {
               name="description" 
               value={proj.description || ""} 
               onChange={(e) => handleChange(index, e)} 
-              className="w-full px-3 py-2 border rounded-lg h-24 focus:ring-2 focus:ring-blue-500 outline-none text-sm resize-none" 
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg h-24 focus:ring-2 focus:ring-blue-500 outline-none text-sm resize-none" 
+              placeholder="Tip: Use Enter for bullet points"
             />
           </div>
         </div>
