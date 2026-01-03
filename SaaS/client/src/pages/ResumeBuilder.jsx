@@ -14,9 +14,10 @@ import TemplateSelector from '../components/TemplateSelector';
 import ColorPicker from '../components/ColorPicker';
 import { useContext } from 'react';
 import { AppContext } from '../context/AppContext';
+import {toast} from 'react-toastify'
 
 const ResumeBuilder = () => {
-  const { saveResume } = useContext(AppContext)
+  const { saveResumeContent, } = useContext(AppContext)
 
   const { resumeId } = useParams();
   const [step, setStep] = useState(0);
@@ -58,14 +59,16 @@ const ResumeBuilder = () => {
 
   const activeSection = sections[step];
 
-  const handleSubmit = async()=>{
-    const savedData = await saveResume(resumeData);
-    if (savedData) {
-      if (!resumeData._id) {
-        setResumeData(prev => ({ ...prev, _id: savedData._id }));
-      }
-    } 
+  const handleSaveResume = async () => {
+  if (!resumeData._id) {
+    return toast.error("Resume ID not found. Please create from dashboard.");
   }
+  const { _id, ...content } = resumeData;
+  const result = await saveResumeContent(_id, content);
+  if (result) {
+    setResumeData(result);
+  }
+};
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
@@ -169,10 +172,10 @@ const ResumeBuilder = () => {
           <div className="lg:col-span-7">
             <div className="sticky top-8 flex flex-col gap-4">
 
-              {/* Container Tombol Save - Rata Kanan */}
+              {/* Container Tombol Save */}
               <div className="flex justify-end items-center gap-3">
                 <button 
-                  onClick={handleSubmit}
+                  onClick={handleSaveResume}
                   className="flex items-center gap-2 text-sm font-semibold text-green-700 bg-green-100 hover:bg-green-200 border border-green-200 active:scale-95 transition-all px-6 py-2.5 rounded-lg"
                 >
                   <span>Save</span>

@@ -11,7 +11,7 @@ const userAuth = (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
         if (decoded && decoded.id) {
-            req.user = decoded.id; 
+            req.user = {id: decoded.id} 
             next();
         } else {
             return res.status(401).json({ success: false, message: "Unauthorized Access. Login Again" });

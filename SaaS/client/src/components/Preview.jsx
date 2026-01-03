@@ -24,7 +24,7 @@ export default function Preview({data,template, accentColor, classes=""}){
             <div id="resume-preview" className={"border broder-gray-2-- print:shadow-none print:border-none" + classes}>
                 {renderTemplate()}
             </div>
-            <style jsx>
+            <style jsx="true">
                 {`
                 @page {
                     size: letter;

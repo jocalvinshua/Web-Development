@@ -1,94 +1,52 @@
 import Resume from "../model/Resume.js";
 
-export const saveResume = async (req, res) => {
+export const createResume = async (req, res) => {
   try {
-    const userId = req.user;
-    let resumeData = JSON.parse(req.body.data);
-    if (!resumeData._id || resumeData._id === "" || resumeData._id === "null") {
-      delete resumeData._id;
-    }
+    // console.log("Body:", req.body)
+    // console.log("User ID:", req.user?.id)
 
-    let resume;
-    if (resumeData._id) {
-      // Logika Update
-      resume = await resumeModel.findOneAndUpdate(
-        { _id: resumeData._id, userId },
-        { ...resumeData, userId },
-        { new: true }
-      );
-    } else {
-      // Logika Create
-      resume = new resumeModel({ ...resumeData, userId });
-      await resume.save();
-    }
+    const { title } = req.body;
+    if (!title) return res.status(400).json({ success: false, message: "Title is required" });
 
-    res.json({ success: true, data: resume });
+    const newResume = new Resume({
+      user: req.user.id,
+      title: title,
+    });
+
+    await newResume.save();
+    res.status(201).json({ success: true, data: newResume });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-export const getUserResumes = async (req, res) => {
-    try {
-        const resumes = await Resume.find({ user: req.user }).sort({ updatedAt: -1 });
-        res.status(200).json({ success: true, resumes });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+export const saveResumeContent = async (req, res) => {
+  try {
+    const { resumeId } = req.body;
+    let updateData = {};
+    const keys = ['personalInfo', 'experiences', 'education', 'projects', 'skills', 'professionalSummary'];
+    
+    keys.forEach(key => {
+      if (req.body[key]) {
+        updateData[key] = typeof req.body[key] === 'string' 
+          ? JSON.parse(req.body[key]) 
+          : req.body[key];
+      }
+    });
+    if (req.file) {
+      updateData.personalInfo = {
+        ...updateData.personalInfo,
+        image: req.file.path
+      };
     }
-};
-
-export const getResumeById = async (req, res) => {
-    try {
-        const resume = await Resume.findOne({ _id: req.params.id, user: req.user });
-        
-        if (!resume) {
-            return res.status(404).json({ success: false, message: "Resume tidak ditemukan atau akses ditolak" });
-        }
-
-        res.status(200).json({ success: true, resume });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
-
-export const deleteResume = async (req, res) => {
-    try {
-        const deletedResume = await Resume.findOneAndDelete({ _id: req.params.id, user: req.user });
-
-        if (!deletedResume) {
-            return res.status(404).json({ success: false, message: "Resume tidak ditemukan" });
-        }
-
-        res.status(200).json({ success: true, message: "Resume berhasil dihapus" });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
-
-export const renameResume = async (req, res) => {
-    try {
-        const { resumeId, title } = req.body;
-        const userId = req.user;
-
-        if (!title || title.trim() === "") {
-            return res.status(400).json({ success: false, message: "Title is required" });
-        }
-        const resume = await resumeModel.findOne({ _id: resumeId, userId });
-
-        if (!resume) {
-            return res.status(404).json({ 
-                success: false, 
-                message: "Resume not found or unauthorized" 
-            });
-        }
-
-        resume.title = title;
-        await resume.save();
-
-        res.json({ success: true, message: "Resume renamed successfully" });
-
-    } catch (error) {
-        console.error("Rename Error:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    const resume = await Resume.findOneAndUpdate(
+      { _id: resumeId, user: req.user.id },
+      { $set: updateData },
+      { new: true }
+    );
+    res.json({ success: true, data: resume });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
 };

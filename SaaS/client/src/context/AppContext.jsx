@@ -11,6 +11,7 @@ export const AppProvider = ({ children }) => {
 
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [userData, setUserData] = useState(null);
+  const [newResume, setNewResume] = useState([])
 
   const getIsAuth = async () => {
     try {
@@ -34,6 +35,8 @@ export const AppProvider = ({ children }) => {
       getIsAuth();
     }
   }, []);
+
+  const headers = {token};
 
   const handleLogin = async (formData) => {
     try {
@@ -59,84 +62,65 @@ export const AppProvider = ({ children }) => {
     navigate("/login");
   };
 
-  const saveResume = async (resumeData) => {
+  // Di dalam AppProvider
+  const createResume = async (title) => {
     try {
-      const formData = new FormData();
-      formData.append('data', JSON.stringify(resumeData));
-      if (resumeData.personal_info?.imageFile) {
-        formData.append('image', resumeData.personal_info.imageFile);
-      }
-      const { data } = await axios.post(`${backendUrl}/api/resume/save`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          token: token
-        }
-      });
-
+      const { data } = await axios.post(`${backendUrl}/api/resume/create`, { title }, { headers });
       if (data.success) {
-        toast.success(data.message || "Resume saved!");
+        toast.success("Resume initialized!");
         return data.data;
-      } else {
-        toast.error(data.message);
-        return null;
       }
     } catch (error) {
-      console.error("Save Error:", error);
-      toast.error(error.response?.data?.message || "Failed to save resume");
+      toast.error(error.response?.data?.message || "Failed to create");
       return null;
     }
   };
 
-  const getUserResumes = async () => {
+  const saveResumeContent = async (resumeId, content) => {
     try {
-      const { data } = await axios.get(`${backendUrl}/api/resume/list`, { headers: { token } });
-      if (data.success) return data.resumes;
-    } catch (error) {
-      toast.error("Failed to load resumes");
-    }
-    return [];
-  };
+      const formData = new FormData();
+      formData.append('resumeId', resumeId);
+      Object.keys(content).forEach(key => {
+        if (key === 'personalInfo' && content[key].imageFile) {
+          formData.append('image', content[key].imageFile);
+        }
+        if (typeof content[key] === 'object') {
+          formData.append(key, JSON.stringify(content[key]));
+        } else {
+          formData.append(key, content[key]);
+        }
+      });
+      const { data } = await axios.patch(`${backendUrl}/api/resume/save-content`, formData, {
+        headers: { 
+          token, 
+          'Content-Type': 'multipart/form-data' 
+        }
+      });
 
-  const renameResume = async (resumeId, newTitle) => {
-    try {
-      const { data } = await axios.post(`${backendUrl}/api/resume/rename`, 
-        { resumeId: resumeId, title: newTitle },
-        { headers: { token } }
-      );
-      return data.success;
-    } catch (error) {
-      return false;
-    }
-  };
-
-  const deleteResume = async (resumeId) => {
-    try {
-      const { data } = await axios.post(`${backendUrl}/api/resume/delete`, 
-        { resumeId }, 
-        { headers: { token } }
-      );
       if (data.success) {
-        toast.success("Resume deleted");
-        return true;
+        toast.success("Progress Saved!");
+        return data.data;
       }
     } catch (error) {
-      toast.error("Failed to delete resume");
+      console.error("Save Error:", error.response?.data);
+      toast.error("Save failed");
+      return null;
     }
-    return false;
   };
 
   return (
     <AppContext.Provider value={{ 
         backendUrl, 
         token, 
-        userData, 
+        userData,
+
         handleLogin, 
-        getIsAuth, 
+        getIsAuth,
         logout,
-        saveResume,
-        getUserResumes,
-        renameResume,
-        deleteResume,
+
+        createResume,
+        saveResumeContent,
+        
         navigate 
       }}>
       {children}

@@ -1,32 +1,12 @@
-import express from 'express';
-import multer from 'multer';
-
-import { 
-    saveResume, 
-    getUserResumes, 
-    getResumeById, 
-    deleteResume,
-    renameResume
-} from '../controller/resumeController.js'; 
-import userAuth from '../middleware/userAuth.js';
+import express from "express";
+import { createResume, saveResumeContent } from "../controller/resumeController.js";
+import authMiddleware from "../middleware/userAuth.js";
+import upload from "../middleware/uploadMulter.js"
 
 const resumeRoute = express.Router();
-// --- Konfigurasi Multer ---
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'),
-    filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
-});
 
-const upload = multer({ 
-    storage,
-    limits: { fileSize: 2 * 1024 * 1024 } // 2MB
-});
-
-// --- Routes ---
-resumeRoute.post('/save', userAuth, upload.single('image'), saveResume);
-resumeRoute.get('/all', userAuth, getUserResumes);
-resumeRoute.get('/:id', userAuth, getResumeById);
-resumeRoute.post('/delete', userAuth, deleteResume); 
-resumeRoute.post('/rename', userAuth, renameResume);
+resumeRoute.post("/create", authMiddleware, createResume);
+// resumeRoute.patch("/save-content", authMiddleware, saveResumeContent);
+resumeRoute.patch("/save-content", authMiddleware, upload.single('image'), saveResumeContent);
 
 export default resumeRoute;
