@@ -60,15 +60,15 @@ const ResumeBuilder = () => {
   const activeSection = sections[step];
 
   const handleSaveResume = async () => {
-  if (!resumeData._id) {
-    return toast.error("Resume ID not found. Please create from dashboard.");
-  }
-  const { _id, ...content } = resumeData;
-  const result = await saveResumeContent(_id, content);
-  if (result) {
-    setResumeData(result);
-  }
-};
+    if (!resumeData._id) {
+      return toast.error("Resume ID not found. Please create from dashboard.");
+    }
+    const { _id, ...content } = resumeData;
+    const result = await saveResumeContent(_id, content);
+    if (result) {
+      setResumeData(result);
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">

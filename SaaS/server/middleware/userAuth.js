@@ -1,25 +1,17 @@
 import jwt from 'jsonwebtoken';
 
 const userAuth = (req, res, next) => {
-    const { token } = req.headers; 
-
-    if (!token) {
-        return res.status(401).json({ success: false, message: "Unauthorized Access. Login Again" });
+    const authHeader = req.headers.authorization;
+    if(!token){
+        return res.status(401).json({success: false, message: "Unauthorized"})
     }
-
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
-        if (decoded && decoded.id) {
-            req.user = {id: decoded.id} 
-            next();
-        } else {
-            return res.status(401).json({ success: false, message: "Unauthorized Access. Login Again" });
-        }
-        
+        req.user = { id: decoded.id }; 
+        next();
     } catch (error) {
-        console.error("Authentication error:", error);
-        return res.status(401).json({ success: false, message: "Invalid token" });
+        console.error("JWT Error:", error.message);
+        return res.status(401).json({ success: false, message: "Invalid or Expired Token" });
     }
 }
 

@@ -11,8 +11,6 @@ export default function Preview({data,template, accentColor, classes=""}){
 
             case "minimal":
                 return <MinimalTemplate data={data} accentColor={accentColor}/>
-            case "modern":
-                return <ModernTemplate data={data} accentColor={accentColor}/>
             case "minimalImage":
                 return <MinimalImageTemplate data={data} accentColor={accentColor}/>
             case "classic":

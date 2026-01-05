@@ -9,120 +9,182 @@ export const AppProvider = ({ children }) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
 
-  const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [userData, setUserData] = useState(null);
-  const [newResume, setNewResume] = useState([])
+  const [isLoading, setIsLoading] = useState(true);
 
+  /* ================================
+     AXIOS AUTH INTERCEPTOR (FIXED)
+  ================================= */
+  useEffect(() => {
+    const interceptor = axios.interceptors.request.use((config) => {
+      const storedToken = localStorage.getItem("token");
+
+      // Only attach VALID JWT token
+      if (storedToken && storedToken.startsWith("ey")) {
+        config.headers.Authorization = `Bearer ${storedToken}`;
+      }
+
+      return config;
+    });
+
+    return () => axios.interceptors.request.eject(interceptor);
+  }, []);
+
+  /* ================================
+     CHECK AUTH ON APP LOAD
+  ================================= */
   const getIsAuth = async () => {
     try {
-      if (!token) return;
-      const { data } = await axios.get(`${backendUrl}/api/user/is-auth`, {
-        headers: { token }
-      });
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setUserData(null);
+        return;
+      }
+
+      const { data } = await axios.get(
+        `${backendUrl}/api/user/is-auth`
+      );
+
       if (data.success) {
         setUserData(data.user);
-      } else {
-        logout();
       }
     } catch (error) {
-      console.error("Auth error:", error);
-      logout();
+      console.error(
+        "Auth Error:",
+        error.response?.data?.message || error.message
+      );
+
+      // ❗ Do NOT delete token automatically here
+      setUserData(null);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (token) {
-      getIsAuth();
-    }
+    getIsAuth();
   }, []);
 
-  const headers = {token};
-
+  /* ================================
+     LOGIN
+  ================================= */
   const handleLogin = async (formData) => {
-    try {
-      const { data } = await axios.post(`${backendUrl}/api/user/login`, formData);
-      if (data.success) {
-        localStorage.setItem("token", data.token);
-        setToken(data.token);
-        setUserData(data.user);
-        toast.success("Login Berhasil!");
-        navigate("/app");
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Login gagal");
-    }
-  };
+  try {
+    const payload = {
+      email: formData.email,
+      password: formData.password,
+    };
 
+    const { data } = await axios.post(
+      `${backendUrl}/api/user/login`,
+      payload,
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    if (data.success) {
+      localStorage.setItem("token", data.token);
+      setUserData(data.user);
+      toast.success("Selamat Datang!");
+      navigate("/app");
+    }
+  } catch (error) {
+    console.error("LOGIN ERROR:", error.response?.data);
+    toast.error(error.response?.data?.message || "Login gagal");
+  }
+};
+
+
+  /* ================================
+     LOGOUT
+  ================================= */
   const logout = () => {
     localStorage.removeItem("token");
-    setToken("");
     setUserData(null);
+    toast.info("Sesi berakhir, silakan login kembali");
     navigate("/login");
   };
 
-  // Di dalam AppProvider
-  const createResume = async (title) => {
-    try {
-      const { data } = await axios.post(`${backendUrl}/api/resume/create`, { title }, { headers });
-      if (data.success) {
-        toast.success("Resume initialized!");
-        return data.data;
+  /* ================================
+     RESUME FUNCTIONS
+  ================================= */
+const createResume = async (title, token, navigate) => {
+  try {
+    const { data } = await axios.post(
+      `${backendUrl}/api/resume/create`,
+      { title },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to create");
-      return null;
+    );
+
+    if (data.success) {
+      toast.success("Resume successfully created");
+
+      navigate(`/app/builder/${data.resumeId}`);
+    } else {
+      toast.error(data.message || "Failed to create resume");
     }
-  };
+  } catch (error) {
+    toast.error("Server error");
+    console.error(error.response?.data || error.message);
+  }
+};
+
 
   const saveResumeContent = async (resumeId, content) => {
     try {
       const formData = new FormData();
-      formData.append('resumeId', resumeId);
-      Object.keys(content).forEach(key => {
-        if (key === 'personalInfo' && content[key].imageFile) {
-          formData.append('image', content[key].imageFile);
-        }
-        if (typeof content[key] === 'object') {
+      formData.append("resumeId", resumeId);
+
+      Object.keys(content).forEach((key) => {
+        if (key === "personalInfo") {
+          const { imageFile, ...rest } = content[key];
+
+          if (imageFile instanceof File) {
+            formData.append("image", imageFile);
+          }
+
+          formData.append(key, JSON.stringify(rest));
+        } else if (typeof content[key] === "object") {
           formData.append(key, JSON.stringify(content[key]));
         } else {
           formData.append(key, content[key]);
         }
       });
-      const { data } = await axios.patch(`${backendUrl}/api/resume/save-content`, formData, {
-        headers: { 
-          token, 
-          'Content-Type': 'multipart/form-data' 
-        }
-      });
+
+      const { data } = await axios.patch(
+        `${backendUrl}/api/resume/save-content`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
 
       if (data.success) {
-        toast.success("Progress Saved!");
+        toast.success("Progress disimpan!");
         return data.data;
       }
     } catch (error) {
       console.error("Save Error:", error.response?.data);
-      toast.error("Save failed");
+      toast.error(error.response?.data?.message || "Gagal menyimpan");
       return null;
     }
   };
 
   return (
-    <AppContext.Provider value={{ 
-        backendUrl, 
-        token, 
+    <AppContext.Provider
+      value={{
+        backendUrl,
         userData,
-
-        handleLogin, 
-        getIsAuth,
+        isLoading,
+        handleLogin,
         logout,
-
         createResume,
         saveResumeContent,
-        
-        navigate 
-      }}>
+        navigate,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );

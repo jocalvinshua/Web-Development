@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bycrypt from 'bcrypt';
 
 const userSchema = new mongoose.Schema(
   {
@@ -11,7 +12,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      lowercase: true
     },
     password: {
       type: String,
@@ -22,6 +22,9 @@ const userSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+userSchema.methods.comparePassword = function (password){
+  return bycrypt.compareSync(password, this.password)
+}
 
 const User = mongoose.Model.User || mongoose.model("User", userSchema);
 
