@@ -5,58 +5,41 @@ import { toast } from "react-toastify";
 
 export const AppContext = createContext(null);
 
+axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
+axios.defaults.withCredentials = true;
+
 export const AppProvider = ({ children }) => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
 
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [userData, setUserData] = useState(null);
+  const [userResume, setUserResume] = useState([]);
+  const [summary, setSummary] = useState("");
+  const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
-  /* ================================
-     AXIOS AUTH INTERCEPTOR (FIXED)
-  ================================= */
   useEffect(() => {
     const interceptor = axios.interceptors.request.use((config) => {
-      const storedToken = localStorage.getItem("token");
-
-      // Only attach VALID JWT token
-      if (storedToken && storedToken.startsWith("ey")) {
-        config.headers.Authorization = `Bearer ${storedToken}`;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
       }
-
       return config;
     });
-
     return () => axios.interceptors.request.eject(interceptor);
-  }, []);
+  }, [token]);
 
-  /* ================================
-     CHECK AUTH ON APP LOAD
-  ================================= */
   const getIsAuth = async () => {
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
     try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        setUserData(null);
-        return;
-      }
-
-      const { data } = await axios.get(
-        `${backendUrl}/api/user/is-auth`
-      );
-
+      const { data } = await axios.get("/api/user/is-auth");
       if (data.success) {
         setUserData(data.user);
       }
     } catch (error) {
-      console.error(
-        "Auth Error:",
-        error.response?.data?.message || error.message
-      );
-
-      // ❗ Do NOT delete token automatically here
-      setUserData(null);
+      handleLogout(); 
     } finally {
       setIsLoading(false);
     }
@@ -66,123 +49,156 @@ export const AppProvider = ({ children }) => {
     getIsAuth();
   }, []);
 
-  /* ================================
-     LOGIN
-  ================================= */
-  const handleLogin = async (formData) => {
-  try {
-    const payload = {
-      email: formData.email,
-      password: formData.password,
-    };
-
-    const { data } = await axios.post(
-      `${backendUrl}/api/user/login`,
-      payload,
-      { headers: { "Content-Type": "application/json" } }
-    );
-
-    if (data.success) {
-      localStorage.setItem("token", data.token);
-      setUserData(data.user);
-      toast.success("Selamat Datang!");
-      navigate("/app");
+  const handleLogin = async (email, password) => {
+    try {
+      const { data } = await axios.post("/api/user/login", { email, password });
+      if (data.success) {
+        localStorage.setItem("token", data.token);
+        setToken(data.token);
+        setUserData(data.user);
+        toast.success("Login Berhasil");
+        navigate("/app");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Login Gagal");
     }
-  } catch (error) {
-    console.error("LOGIN ERROR:", error.response?.data);
-    toast.error(error.response?.data?.message || "Login gagal");
-  }
-};
+  };
 
+  const handleRegister = async (name, email, password) => {
+    try {
+      const { data } = await axios.post("/api/user/register", { name, email, password });
+      if (data.success) {
+        localStorage.setItem("token", data.token);
+        setToken(data.token);
+        setUserData(data.user);
+        toast.success("Registrasi Berhasil");
+        navigate("/app");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Registrasi Gagal");
+    }
+  };
 
-  /* ================================
-     LOGOUT
-  ================================= */
-  const logout = () => {
+  const handleLogout = () => {
     localStorage.removeItem("token");
+    setToken("");
     setUserData(null);
-    toast.info("Sesi berakhir, silakan login kembali");
+    toast.info("Logged Out");
     navigate("/login");
   };
 
-  /* ================================
-     RESUME FUNCTIONS
-  ================================= */
-const createResume = async (title, token, navigate) => {
-  try {
-    const { data } = await axios.post(
-      `${backendUrl}/api/resume/create`,
-      { title },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    if (data.success) {
-      toast.success("Resume successfully created");
-
-      navigate(`/app/builder/${data.resumeId}`);
-    } else {
-      toast.error(data.message || "Failed to create resume");
-    }
-  } catch (error) {
-    toast.error("Server error");
-    console.error(error.response?.data || error.message);
-  }
-};
-
-
-  const saveResumeContent = async (resumeId, content) => {
+  // 2. Resume Functions
+  const handleCreateResume = async (title) => {
     try {
-      const formData = new FormData();
-      formData.append("resumeId", resumeId);
-
-      Object.keys(content).forEach((key) => {
-        if (key === "personalInfo") {
-          const { imageFile, ...rest } = content[key];
-
-          if (imageFile instanceof File) {
-            formData.append("image", imageFile);
-          }
-
-          formData.append(key, JSON.stringify(rest));
-        } else if (typeof content[key] === "object") {
-          formData.append(key, JSON.stringify(content[key]));
-        } else {
-          formData.append(key, content[key]);
-        }
-      });
-
-      const { data } = await axios.patch(
-        `${backendUrl}/api/resume/save-content`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-
+      const { data } = await axios.post("/api/resume/create", { title });
       if (data.success) {
-        toast.success("Progress disimpan!");
+        toast.success(data.message);
         return data.data;
       }
     } catch (error) {
-      console.error("Save Error:", error.response?.data);
-      toast.error(error.response?.data?.message || "Gagal menyimpan");
-      return null;
+      toast.error(error.response?.data?.message || "Gagal membuat resume");
+    }
+  };
+
+  const handleUpdateResume = async (resumeId, resumeData, imageFile, removeBackground) => {
+    try {
+      const formData = new FormData();
+      formData.append("resumeId", resumeId);
+      formData.append("resumeData", JSON.stringify(resumeData));
+      if (imageFile) formData.append("image", imageFile);
+      formData.append("removeBackground", removeBackground);
+
+      const { data } = await axios.put("/api/resume/update", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (data.success) {
+        toast.success("Resume Tersimpan");
+        return data.data;
+      }
+    } catch (error) {
+      toast.error("Gagal update resume");
+    }
+  };
+
+  const handleDeleteResume = async (resumeId) => {
+    try {
+      const { data } = await axios.delete(`/api/resume/delete/${resumeId}`);
+      if (data.success) {
+        toast.success(data.message);
+        getUserResumes();
+      }
+    } catch (error) {
+      toast.error("Gagal menghapus");
+    }
+  };
+
+  const getResumeById = async (resumeId) => {
+    try {
+      const { data } = await axios.get(`/api/resume/get/${resumeId}`);
+      if (data.success) {
+        setUserResume(data.data);
+        return data.data;
+      }
+    } catch (error) {
+      toast.error("Resume tidak ditemukan");
+    }
+  };
+
+  const getUserResumes = async () => {
+    try {
+      const { data } = await axios.get("/api/user/resume");
+      if (data.success) {
+        setUserResume(data.data || []);
+      }
+    } catch (error) {
+      console.error("Gagal memuat daftar resume");
+    }
+  };
+
+  const getSummaryAI = async (userContent) => {
+    try {
+      const { data } = await axios.post("/api/ai/enhance-sum", { userContent });
+      if (data.success) {
+        setSummary(data.enhanceContent);
+        toast.success("Summary diperbarui!");
+      }
+    } catch (error) {
+      toast.error("AI Error");
+    }
+  };
+
+  const getDescriptionAI = async (userContent) => {
+    try {
+      const { data } = await axios.post("/api/ai/enhance-desc", { userContent });
+      if (data.success) {
+        setDescription(data.enhanceContent);
+      }
+    } catch (error) {
+      toast.error("AI Error");
+    }
+  };
+
+  const handleUploadResumeAI = async (resumeText, title) => {
+    try {
+      const { data } = await axios.post("/api/ai/upload-resume", { resumeText, title });
+      if (data.success) {
+        toast.success("Resume berhasil di-parsing!");
+        navigate(`/editor/${data.resumeId}`);
+      }
+    } catch (error) {
+      toast.error("Gagal mengurai resume");
     }
   };
 
   return (
     <AppContext.Provider
       value={{
-        backendUrl,
-        userData,
-        isLoading,
-        handleLogin,
-        logout,
-        createResume,
-        saveResumeContent,
-        navigate,
+        token, userData, userResume, summary, description, isLoading,
+        handleLogin, handleRegister, handleLogout,
+        handleCreateResume, handleUpdateResume, handleDeleteResume,
+        getResumeById, getUserResumes,
+        getSummaryAI, getDescriptionAI, handleUploadResumeAI
       }}
     >
       {children}
