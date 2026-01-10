@@ -6,8 +6,8 @@ import upload from "../middleware/uploadMulter.js"
 const resumeRoute = express.Router();
 
 resumeRoute.post("/create", userAuth, createResume);
-resumeRoute.put("/update", userAuth, upload.single('image'), updateResume);
-resumeRoute.delete("/delete/:resumeId", userAuth, deleteResume)
-resumeRoute.get('/get/:resumeId', userAuth, getResumeById)
+resumeRoute.get("/get/:resumeId", userAuth, getResumeById);
+resumeRoute.put("/update", upload.single("image"), userAuth, updateResume);
+resumeRoute.delete("/delete/:resumeId", userAuth, deleteResume);
 
 export default resumeRoute;

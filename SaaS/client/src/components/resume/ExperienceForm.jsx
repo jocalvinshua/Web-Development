@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Trash2, Briefcase } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import api from '../../config/api';
 
 const ExperienceForm = ({ data = [], onChange }) => {
+
+  const { token } = useSelector(state => state.auth)
+  const [generatingIndex, setGeneratingIndex] = useState(-1)
   
   // Fungsi untuk menambah entry baru
   const addExperience = () => {
@@ -16,24 +21,31 @@ const ExperienceForm = ({ data = [], onChange }) => {
     onChange([...data, newExp]);
   };
 
-  // Fungsi untuk menangani perubahan input secara dinamis
-  const handleChange = (index, e) => {
-    const { name, value, type, checked } = e.target;
-    const newExpList = [...data];
-    
-    newExpList[index] = {
-      ...newExpList[index],
-      [name]: type === 'checkbox' ? checked : value
-    };
-    
-    onChange(newExpList);
-  };
+  const removeExperience = (index)=>{
+    const updated = data.filter((__, i)=>i !== index)
+  }
 
-  // Fungsi untuk menghapus entry
-  const removeExperience = (index) => {
-    const newExpList = data.filter((_, i) => i !== index);
-    onChange(newExpList);
-  };
+  const updateExperience = (index, field, value)=>{
+    const updated = [...data]
+    updated[index] = {...updated[index], [field]: value}
+    onChange(updated)
+  }
+
+  const generateDescription = async(index)=>{
+    setGeneratingIndex(index)
+    const experience = data[index]
+    const prompt = `Enhance this job description ${experience.descriprioin} for the position of ${experience.position} at ${experience.company}.`
+    try {
+      const {data} = await api('api/ai/enhance-desc', {userContent: prompt}, 
+        { headers: { Authorization: token } }
+      )
+      updateExperience(index, "description", data.enhancedContent)
+    } catch (error) {
+      toast.error(error.message)
+    }finally{
+      setGeneratingIndex(-1)
+    }
+  }
 
   return (
     <div className="space-y-6">

@@ -1,148 +1,112 @@
 import Resume from "../model/Resume.js";
 import fs from "fs"
+import imagekit from "../config/imageKit.js";
 
 export const createResume = async (req, res) => {
   try {
     const { title } = req.body;
     const userId = req.userId;
-    
-    if (!title) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "Title is required" 
-        });
-    }
-    if (!userId) {
-        return res.status(401).json({ 
-            success: false, 
-            message: "Unauthorized Access. Login Again" 
-        });
-    }
-    // Create Resume
-    const newResume = new Resume({
-      userId, title
+
+    // Create new resume
+    const newResume = await Resume.create({
+      userId,
+      title,
     });
 
-    await newResume.save();
-    
-    res.status(201).json({ 
-        success: true, 
-        message: "Resume created successfully",
-        data: newResume 
+    res.status(201).json({
+      success: true,
+      message: "Resume created successfully",
+      resume: newResume,
     });
+
   } catch (error) {
-    console.error("Error creating resume:", error);
-    res.status(500).json({ 
-        success: false, 
-        message: "Internal server error" 
+    console.error("Create Resume Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
     });
   }
 };
+
 
 export const updateResume = async (req, res) => {
   try {
-    const { resumeId, resumeData, removeBackground } = req.body;
-    const userId = req.user.id;
+    const userId = req.userId;
     const image = req.file;
+    const { resumeId, resumeData, removeBackground } = req.body;
 
-    let resumeDataCopy = JSON.parse(resumeData);
-    const resume = await Resume.findByIdAndUpdate({
-        userId,
-        _id: resumeId
-    }, resumeDataCopy, {new: true})
-
-    if(image){
-        const imageBuferData = fs.createReadStream(image.path)
-        const response = await client.files.upload({
-          file: imageBuferData,
-          fileName: 'resume.jpg',
-          folder: 'user-resumes',
-          transformation:{
-            pre: 'w-300, h-300, fo-face z-0.75' + (removeBackground ? ',e-bgremove': '')
-          }
-        });
-
-        resumeDataCopy.personal_info.image = response.url
-    }
-
-    res.json({ 
-        success: true, 
-        message: "Resume content saved successfully",
-        data: resume 
-    });
-    
     if (!resumeId) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "Resume ID is required" 
-        });
-    }
-    if (!userId) {
-        return res.status(401).json({ 
-            success: false, 
-            message: "Unauthorized Access. Login Again" 
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Resume ID is required",
+      });
     }
 
-    // let updateData = {};
-    
-    // const keys = [
-    //     'personalInfo',
-    //     'professionalSummary',
-    //     'experiences',
-    //     'education',
-    //     'projects',
-    //     'skills',
-    //     'template',
-    //     'accentColor'
-    // ];
-    
-    // keys.forEach(key => {
-    //   if (req.body[key]) {
-    //     try {
-    //         updateData[key] = typeof req.body[key] === 'string' 
-    //             ? JSON.parse(req.body[key]) 
-    //             : req.body[key];
-    //     } catch (error) {
-    //         console.error(`Error parsing ${key}:`, error);
-    //         updateData[key] = req.body[key];
-    //     }
-    //   }
-    // });
+    let resumeDataCopy = JSON.parse(JSON.stringify(resumeData));
 
-    // if (req.file) {
-    //   updateData.personalInfo = {
-    //     ...(updateData.personalInfo || {}),
-    //     image: req.file.path
-    //   };
-    // }
+    if(typeof resumeData === 'string'){
+      resumeDataCopy = await JSON.parse(resumeData)
+    }else{
+      resumeDataCopy = structuredClone(resumeData)
+    }
+    if (image) {
+      const fileBuffer = fs.readFileSync(image.path);
 
-    // console.log('Update data:', updateData);
-    
+      const response = await imagekit.upload({
+        file: fileBuffer,
+        fileName: `resume_image_${resumeId}.jpg`,
+        folder: "/user-resumes",
+        transformation: {
+          pre:
+            "w-300,h-300,fo-face" +
+            (removeBackground === "true" ? ",e-bgremove" : ""),
+        },
+      });
+
+      resumeDataCopy.personalInfo = {
+        ...resumeDataCopy.personalInfo,
+        image: response.url,
+      };
+
+      fs.unlinkSync(image.path);
+    }
+
+    const resume = await Resume.findOneAndUpdate(
+      { _id: resumeId, userId },
+      { $set: resumeDataCopy },
+      { new: true }
+    );
+
+    if (!resume) {
+      return res.status(404).json({
+        success: false,
+        message: "Resume not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Resume updated successfully",
+      data: resume,
+    });
   } catch (error) {
-    console.error("Error saving resume content:", error);
-    res.status(500).json({ 
-        success: false, 
-        message: "Internal server error" 
+    console.error("Update Resume Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
     });
   }
 };
+
 
 export const getResumeById = async (req, res) => {
     try {
         const { resumeId } = req.params;
-        const userId = req.user.id;
-
-        if (!userId) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized Access. Login Again"
-            });
-        }
+        const userId = req.userId;
 
         const resume = await Resume.findOne({
-            _id: resumeId,
-            userId
+          _id: resumeId,
+          userId: userId
         });
 
         if (!resume) {
@@ -157,8 +121,10 @@ export const getResumeById = async (req, res) => {
 
         res.json({
             success: true,
+            message: "Resume Found",
             data: resume
         });
+        
     } catch (error) {
         console.error("Error fetching resume:", error);
         res.status(500).json({
@@ -168,52 +134,17 @@ export const getResumeById = async (req, res) => {
     }
 };
 
-// export const getAllResumes = async (req, res) => {
-//     try {
-//         const userId = req.user.id;
-
-//         if (!userId) {
-//             return res.status(401).json({
-//                 success: false,
-//                 message: "Unauthorized Access. Login Again"
-//             });
-//         }
-
-//         const resumes = await Resume.find({ user: userId })
-//             .sort({ updatedAt: -1 })
-//             .select('-__v');
-
-//         res.json({
-//             success: true,
-//             count: resumes.length,
-//             data: resumes
-//         });
-//     } catch (error) {
-//         console.error("Error fetching resumes:", error);
-//         res.status(500).json({
-//             success: false,
-//             message: "Internal server error"
-//         });
-//     }
-// };
-
 export const deleteResume = async (req, res) => {
     try {
         const { resumeId } = req.params;
-        const userId = req.user.id;
+        const userId = req.userId;
 
-        if (!userId) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized Access. Login Again"
-            });
-        }
-
-       await Resume.findOneAndDelete({
-            _id: resumeId,
-            userId
+        await Resume.findOneAndDelete({
+          _id: resumeId,
+          userId: userId
         });
 
+        // Response
         res.json({
             success: true,
             message: "Resume deleted successfully"

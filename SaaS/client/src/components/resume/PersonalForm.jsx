@@ -8,9 +8,9 @@ const PersonalForm = ({ data, onChange, removeBackground, setRemoveBackground })
   };
 
   const fields = [
-    { key: "full_name", label: "Full Name", icon: User2Icon, type: "text", required: true },
+    { key: "fullName", label: "Full Name", icon: User2Icon, type: "text", required: true },
     { key: "email", label: "Email Address", icon: Mail, type: "email", required: true },
-    { key: "phone", label: "Phone Number", icon: Phone, type: "tel", required: true },
+    { key: "phoneNumber", label: "Phone Number", icon: Phone, type: "tel", required: true },
     { key: "location", label: "Location", icon: MapPin, type: "text", required: true },
     { key: "profession", label: "Profession", icon: BriefcaseBusiness, type: "text" },
     { key: "linkedin", label: "LinkedIn", icon: Linkedin, type: "url" },

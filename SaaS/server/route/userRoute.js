@@ -1,13 +1,12 @@
 import express from 'express';
-import { loginUser, userRegister, logoutUser, getUserId, getUserResume } from '../controller/userController.js'; 
+import { loginUser, userRegister, getUserId, getUserResume} from '../controller/userController.js'; 
 import userAuth from '../middleware/userAuth.js';
 
 const userRoute = express.Router();
 
-userRoute.post('/register', userRegister);
-userRoute.post('/login', loginUser);
-userRoute.get('/logout', userAuth, logoutUser); 
-userRoute.get('/is-auth', userAuth, getUserId);
-userRoute.get('/resume', userAuth, getUserResume)
+userRoute.post('/register', userRegister)
+userRoute.post('/login', loginUser)
+userRoute.get('/data', userAuth, getUserId)
+userRoute.get('/resumes', userAuth, getUserResume)
 
 export default userRoute;

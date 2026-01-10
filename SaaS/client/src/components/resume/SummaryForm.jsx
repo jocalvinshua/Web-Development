@@ -1,10 +1,33 @@
-import React from 'react';
-import { Save, Sparkle, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Loader2, Sparkle, Sparkles } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { toast } from 'react-hot-toast';
+import api from '../../config/api.js'
 
-const SummaryForm = ({ data, onChange, }) => {
-  
-  // Fungsi untuk menghitung jumlah kata
-  const wordCount = data ? data.trim().split(/\s+/).filter(Boolean).length : 0;
+const SummaryForm = ({ data, onChange }) => {
+  const { token } = useSelector(state => state.auth);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const generateSummary = async () => {
+    try {
+      setIsGenerating(true);
+
+      const prompt = `enhance my professional summary: ${data || ''}`;
+
+      const response = await api.post(
+        '/api/ai/enhance-sum',
+        { userContent: prompt },
+        { headers: { Authorization: token } }
+      );
+
+      onChange(response.data.enhancedContent);
+
+    } catch (error) {
+      toast.error(error.message || 'Failed to enhance summary');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -15,20 +38,29 @@ const SummaryForm = ({ data, onChange, }) => {
             Summarize your career and key achievements.
           </p>
         </div>
-        <button className='flex items-center gap-2 px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transitions-colors disabled:opacity-50'>
-          <Sparkle className='size-4'/>
-          AI Enhance</button>
+
+        <button
+          disabled={isGenerating}
+          onClick={generateSummary}
+          className="flex items-center gap-2 px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50"
+        >
+          {isGenerating ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Sparkle className="size-4" />
+          )}
+          {isGenerating ? 'Enhancing...' : 'AI Enhance'}
+        </button>
       </div>
 
       <div className="relative">
-        <textarea 
+        <textarea
           className="w-full h-64 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none transition-all text-sm leading-relaxed"
-          placeholder="e.g. Passionate Software Engineer with 5+ years of experience in building scalable web applications..."
-          value={data || ""}
+          placeholder="e.g. Passionate Software Engineer with 5+ years of experience..."
+          value={data || ''}
           onChange={(e) => onChange(e.target.value)}
         />
-        
-        {/* Dekorasi AI Hint (Opsional) */}
+
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 text-[10px] text-gray-400 font-medium">
           <Sparkles size={12} />
           Keep it impactful

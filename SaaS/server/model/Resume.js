@@ -14,7 +14,7 @@ const ResumeSchema = new mongoose.Schema(
     },
     template:{
       type: String,
-      default: classic
+      default: "classic"
     },
     accentColor: {
       type: String,
@@ -24,6 +24,7 @@ const ResumeSchema = new mongoose.Schema(
       image: {type: String, default: ''},
       fullName: {type: String, default: ''},
       email: {type: String, default: ''},
+      phoneNumber: { type: String, default: ''},
       location: {type: String, default: ''},
       profession: {type: String, default: ''},
       linkedinUrl: {type: String, default: ''},

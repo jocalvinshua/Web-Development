@@ -1,13 +1,17 @@
-import React, { useState, useContext, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { Mail, Lock, User, LogIn, UserPlus, ArrowRight } from "lucide-react";
-import axios from "axios";
-import { AppContext } from "../context/AppContext";
+import { useState, useContext, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Mail, Lock, User } from "lucide-react";
+import api from '../config/api.js'
+import { useDispatch } from "react-redux";
+import {login} from "../app/features/authSlice"
+import { toast } from 'react-hot-toast'
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
+  const dispatch = useDispatch()
+
   const [searchParams] = useSearchParams();
-  const { handleLogin, handleRegister } = useContext(AppContext);
-  
+  const navigate = useNavigate()
   const [state, setState] = useState(searchParams.get("state") || "login");
 
   const [formData, setFormData] = useState({
@@ -16,10 +20,6 @@ export default function Login() {
     password: "",
   });
 
-  useEffect(() => {
-    setFormData({ name: "", email: "", password: "" });
-  }, [state]);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -27,13 +27,22 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (state === "login") {
-      await handleLogin({ email: formData.email, password: formData.password });
-      console.log("Login Successfully")
-    } else {
-      await handleRegister(formData);
+    try {
+      const { data } = await api.post(`/api/user/${state}`, formData);
+      dispatch(login({
+        token: data.token,
+        user: data.user
+      }));
+      localStorage.setItem("token", data.token);
+      toast.success(data.message);
+      navigate('/app')
+    } catch (error) {
+      const errorMessage = error?.response?.data?.message || error.message || "Something went wrong";
+      toast.error(errorMessage);
+      console.error(error);
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">

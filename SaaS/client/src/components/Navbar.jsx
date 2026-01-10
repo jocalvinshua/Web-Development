@@ -1,11 +1,12 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import logo from "../assets/logo.svg";
-import { AppContext } from "../context/AppContext";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const { navigate, token } = useContext(AppContext);
+  const { user, token } = useSelector((state) => state.auth);
 
   const navlink = [
     { id: "#", name: "Home" },
@@ -13,15 +14,6 @@ export default function Navbar() {
     { id: "#testimonials", name: "Testimonials" },
     { id: "#cta", name: "Contact" },
   ];
-
-  // Logika navigasi berdasarkan status login
-  const handleAction = () => {
-    if (token) {
-      navigate("/app"); 
-    } else {
-      navigate("/login"); 
-    }
-  };
 
   return (
     <>
@@ -36,9 +28,9 @@ export default function Navbar() {
       </div>
 
       <nav className="z-50 flex items-center justify-between w-full py-4 px-6 md:px-16 lg:px-24 xl:px-40 text-sm bg-white/80 backdrop-blur sticky top-0">
-        <a href="#" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt="Logo" className="h-8" />
-        </a>
+        </Link>
 
         {/* Desktop Menu */}
         <ul className="hidden md:flex items-center gap-8 text-slate-700">
@@ -54,14 +46,14 @@ export default function Navbar() {
           ))}
         </ul>
 
-        {/* Action Button: Get Started / Dashboard */}
+        {/* Action Button: Diganti dengan Link */}
         <div className="hidden md:flex">
-          <button
-            onClick={handleAction}
+          <Link
+            to={token ? "/app" : "/login"}
             className="px-6 py-2 rounded-full bg-primary text-white font-semibold hover:bg-primary-dull active:scale-95 transition-all shadow-sm"
           >
             {token ? "Dashboard" : "Get Started"}
-          </button>
+          </Link>
         </div>
 
         {/* Hamburger */}
@@ -82,6 +74,7 @@ export default function Navbar() {
         </button>
       </nav>
 
+      {/* Mobile Menu */}
       <div
         className={`fixed inset-0 z-[100] bg-primary/90 backdrop-blur-md flex flex-col items-center justify-center gap-8 md:hidden transition-transform duration-300 ${
           menuOpen ? "translate-x-0" : "-translate-x-full"
@@ -101,15 +94,13 @@ export default function Navbar() {
           ))}
         </ul>
 
-        <button
-          onClick={() => {
-            setMenuOpen(false);
-            handleAction();
-          }}
+        <Link
+          to={token ? "/app" : "/login"}
+          onClick={() => setMenuOpen(false)}
           className="px-8 py-3 rounded-full bg-white text-primary font-bold hover:bg-slate-100 transition"
         >
           {token ? "Go to Dashboard" : "Get Started"}
-        </button>
+        </Link>
 
         <button
           onClick={() => setMenuOpen(false)}
